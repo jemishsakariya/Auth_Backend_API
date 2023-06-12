@@ -61,7 +61,7 @@ exports.login = async (req, res) => {
     }
 
     // check the registered user
-    const user = await User.findOne({ email });
+    let user = await User.findOne({ email });
 
     // if user doesn't exist
     if (!user) {
@@ -83,25 +83,55 @@ exports.login = async (req, res) => {
     // create jwt token
     const payload = { email: user.email, id: user._id, role: user.role };
 
-    const token = jwt.sign(payload, process.env.JWT_SECRET, {
-      expiresIn: "2h",
-    });
+    if (await bcrypt.compare(password, user.password)) {
+      // password match
+      let token = jwt.sign(payload, process.env.JWT_SECRET, {
+        expiresIn: "2h",
+      });
 
-    // it is use to not show password for security.
-    user.password = undefined;
+      user = user.toObject();
+      user.token = token;
+      // it is use to not show password for security.
+      user.password = undefined;
 
-    res
-      .cookie("token", token, {
-        httpOnly: true, // it means we can not access from client side
+      const options = {
         expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
-      })
-      .status(200)
-      .json({
+        httpOnly: true,
+      };
+
+      res.cookie("token", token, options).status(200).json({
         success: true,
-        message: "Successfully login",
         token,
         user,
+        message: "User logged in successfully",
       });
+    } else {
+      // password not match
+      return res.status(403).json({
+        success: false,
+        message: "Password does not match",
+      });
+    }
+
+    // const token = jwt.sign(payload, process.env.JWT_SECRET, {
+    //   expiresIn: "2h",
+    // });
+
+    // // it is use to not show password for security.
+    // user.password = undefined;
+
+    // res
+    //   .cookie("token", token, {
+    //     httpOnly: true, // it means we can not access from client side
+    //     expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+    //   })
+    //   .status(200)
+    //   .json({
+    //     success: true,
+    //     message: "Successfully login",
+    //     token,
+    //     user,
+    //   });
   } catch (error) {
     console.error(error);
     res.status(500).json({
