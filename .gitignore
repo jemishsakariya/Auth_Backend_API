@@ -1,0 +1,23 @@
+# .gitignore for Tour Management Website (MERN Stack)
+
+# Node.js / Express.js
+node_modules/
+package-lock.json
+
+# React.js
+build/
+public/
+
+# MongoDB
+.env
+
+# IDE / Editor
+.vscode/
+
+# System / Miscellaneous
+.DS_Store
+Thumbs.db
+
+# Logs
+logs/
+*.log
