@@ -2,6 +2,7 @@ const User = require("../models/User");
 
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+require("dotenv").config();
 
 exports.signup = async (req, res) => {
   try {
@@ -50,11 +51,62 @@ exports.signup = async (req, res) => {
 
 exports.login = async (req, res) => {
   try {
+    const { email, password } = req.body;
+
+    if (!email || !password) {
+      return res.status(404).json({
+        success: false,
+        message: "Please fill all the details carefully",
+      });
+    }
+
+    // check the registered user
+    const user = await User.findOne({ email });
+
+    // if user doesn't exist
+    if (!user) {
+      return res
+        .status(404)
+        .json({ success: false, message: "User not found" });
+    }
+
+    const checkCorrextPassword = await bcrypt.compare(password, user.password);
+
+    // if password is incorrect
+    if (!checkCorrextPassword) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Incorrect password" });
+    }
+
+    // if password is correct
+    // create jwt token
+    const payload = { email: user.email, id: user._id, role: user.role };
+
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "2h",
+    });
+
+    // it is use to not show password for security.
+    user.password = undefined;
+
+    res
+      .cookie("token", token, {
+        httpOnly: true, // it means we can not access from client side
+        expires: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000),
+      })
+      .status(200)
+      .json({
+        success: true,
+        message: "Successfully login",
+        token,
+        user,
+      });
   } catch (error) {
     console.error(error);
     res.status(500).json({
       success: false,
-      message: "User cannot be logined, please try again later",
+      message: "Login Failure",
     });
   }
 };
