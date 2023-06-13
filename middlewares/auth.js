@@ -5,10 +5,13 @@ require("dotenv").config();
 exports.auth = (req, res, next) => {
   try {
     // extract jwt token
-    // if token is inserted in cookie then we can use => req.cookies.token
-    const token = req.body.token;
+    // * header method is more secure.
+    const token =
+      req.cookies.token ||
+      req.body.token ||
+      req.header("Authorization").replace("Bearer ", "");
 
-    if (!token) {
+    if (!token || token == undefined) {
       return res.status(401).json({
         success: false,
         message: "Token Missing",

@@ -89,6 +89,7 @@ exports.login = async (req, res) => {
         expiresIn: "2h",
       });
 
+      // * do not use these method of passing token to the body, it is less secure.
       user = user.toObject();
       user.token = token;
       // it is use to not show password for security.
